@@ -1,0 +1,76 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2/1 Buy Down Loan Calculator</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>2/1 Buy Down Loan Calculator</h1>
+        <p>What Is It? Option for Borrowers to reduce their interest rate and monthly payment for a limited period through an upfront lump sum fee. A 2-1 buydown loan reduces your interest rate—2% lower in year 1, 1% lower in year 2—before returning to the full rate in year 3.</p>
+        <div class="step active" id="step1">
+            <h2>Input Parameters</h2>
+            <label>Sales Price: $<input type="number" id="salesPrice" value="750000" min="0"></label>
+            <label>Cash for Down Payment: $<input type="number" id="cashDP" value="150000" min="0"></label>
+            <label>Interest Rate (Annual): <input type="number" id="intRate" step="0.0001" value="0.0675" min="0">
+                <p class="instructions">Enter the current annual interest rate. The average mortgage interest rate is approximately 6.75% today. If you have questions, call Dylon for help.</p>
+            </label>
+            <button id="next1" class="next-btn">Calculate</button>
+        </div>
+        <div class="step" id="step2">
+            <h2>Results</h2>
+            <p>Loan Amount: $<span id="loanAmount"></span> (LTV: <span id="ltv"></span>)</p>
+            <p>Year 1 Payments: $<span id="year1"></span></p>
+            <p>Year 2 Payments: $<span id="year2"></span></p>
+            <p>Year 3-30 Payments: $<span id="year3"></p>
+            <div class="seller-cost">
+                <h3>Seller Contribution</h3>
+                <p>In order to make this work, this is how much we need to negotiate from the seller: $<span id="sellerCost"></span></p>
+            </div>
+            <button id="start-over" class="next-btn">Start Over</button>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
